@@ -1,8 +1,18 @@
 [package]
 name = "radon"
-version = "0.1.0"
+author= "akshitv18@gmail.com"
+version = "0.0.1"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+juniper='0.15.7'
+rocket = "0.5.0-rc.1"
+mongodb = "2.0.0"
+tokio = "1.0.0"
+dotenv = "0.15.0"
+serde = "1.0.130"
+async_once = "0.2.1"
+lazy_static = "1.4.0"
+juniper_rocket = "0.8.0"
