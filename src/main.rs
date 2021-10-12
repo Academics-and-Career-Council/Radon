@@ -17,12 +17,9 @@ use mongodb::{
     sync::Client,
 };
 use std::env;
-// use async_once::AsyncOnce;
 
 #[macro_use]
 extern crate rocket;
-
-// static LOCAL_DB:model::Database = model::Database::new();
 
 lazy_static! {
   static ref MONGO_DATABASE: mongodb::sync::Database = {
@@ -32,8 +29,6 @@ lazy_static! {
     let database = client.database("resources");
     database
   };
-  // #[derive(Debug)]
-  // static ref LOCAL_DB:model::Database = model::Database::new();
 }
 
 #[get("/graphql")]
