@@ -1,0 +1,34 @@
+enum SubResourceType {
+  pdf
+  gdrive
+	youtube
+	zoom
+}
+
+enum ResourceType {
+  document
+  video
+}
+
+type SubResource {
+  id:ID!
+  name: String!
+  category: SubResourceType!
+  link: String!
+}
+
+type Resource  {
+  id: ID!
+  wing: String!
+  title: String!
+  category: ResourceType!
+  objects: [SubResource!]!
+}
+
+input WingResource {
+  wing: String!
+}
+
+type Query {
+  getResourcesByWing(params: WingResource!): [Resource!]!
+}

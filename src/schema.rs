@@ -3,7 +3,6 @@
 
 // impl Context for Database {}
 
-
 // graphql_interface!(<'a> &'a dyn Fetch: Database as "Fetch" |&self| {
 //   description: "A Resource in AnC"
 
@@ -28,10 +27,9 @@
 //   // }
 
 //   instance_resolvers: |&context| {
-// 		&dyn Block => 
+// 		&dyn Block =>
 //   }
 // );
-
 
 // #[juniper::object(
 // 	Context = Database,
@@ -60,16 +58,24 @@
 // 	// }
 // }
 
+pub struct Query;
+use crate::model::{Database, Resources};
 
-// pub struct Query;
+#[juniper::graphql_object(
+	Context = Database,
+	// Scalar = juniper::DefaultScalarValue,
+)]
+impl Query {
+    #[graphql(arguments(wing(description = "wing of AnC")))]
+    fn get_resources(wing: String) -> juniper::FieldResult<Vec<Resources>> {
+        let db = Database::new();
+        Ok(db.get_resources(wing))
+    }
+}
 
-// #[juniper::object(
-// 	Context = Database,
-// 	// Scalar = juniper::DefaultScalarValue,
-// )]
-// impl Query {
-// 	#[graphql(arguments(wing(description = "wing of AnC")))]
-// 	fn get_resources(databse:&Database, wing:String) -> Option<&dyn Fetch> {
-// 		databse.get_resource(&wing)
-// 	}
-// }
+pub type Schema = juniper::RootNode<
+    'static,
+    Query,
+    juniper::EmptyMutation<Database>,
+    juniper::EmptySubscription<Database>,
+>;

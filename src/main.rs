@@ -2,27 +2,25 @@
 
 #[macro_use]
 extern crate juniper;
-
 mod model;
 mod schema;
-// mod schema_old;
 
-use serde::{Deserialize, Serialize};
-use juniper::{EmptyMutation, RootNode};
-// use model::Database;
+use model::Database;
 use rocket::response::content;
 use rocket::State;
-// use schema::Query;
+use serde::{Deserialize, Serialize};
 
-// mod schema;
-
-use mongodb::{bson::doc,bson::Document , options::ClientOptions, sync::Client, bson::oid::ObjectId};
-use std::env;
 use dotenv::dotenv;
 use lazy_static::lazy_static;
+use mongodb::{
+    bson::{doc, oid::ObjectId, serde_helpers},
+    sync::Client,
+};
+use std::env;
 // use async_once::AsyncOnce;
 
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 // static LOCAL_DB:model::Database = model::Database::new();
 
@@ -34,15 +32,45 @@ lazy_static! {
     let database = client.database("resources");
     database
   };
-  #[derive(Debug)]
-  static ref LOCAL_DB:model::Database = model::Database::new();
+  // #[derive(Debug)]
+  // static ref LOCAL_DB:model::Database = model::Database::new();
 }
 
-fn print_type_of<T>(_: &T) {
-  println!("{}", std::any::type_name::<T>())
+#[get("/graphql")]
+fn graphiql() -> content::Html<String> {
+    juniper_rocket::graphiql_source("/graphql", Some("/graphql"))
 }
-fn main() {
-  // let objects = MONGO_DATABASE.collection("name")
-  // println!("{:#?}", LOCAL_DB);
-  println!("{:#?}", model::Database::new());
+
+#[get("/graphql?<request>")]
+async fn get_graphql_handler(
+    context: &State<model::Database>,
+    request: juniper_rocket::GraphQLRequest,
+    schema: &State<schema::Schema>,
+) -> juniper_rocket::GraphQLResponse {
+    request.execute(&schema, &context).await
+}
+
+#[post("/graphql", data = "<request>")]
+async fn post_graphql_handler(
+    context: &State<model::Database>,
+    request: juniper_rocket::GraphQLRequest,
+    schema: &State<schema::Schema>,
+) -> juniper_rocket::GraphQLResponse {
+    request.execute(&schema, &context).await
+}
+
+#[launch]
+fn rocket() -> _ {
+    let _b = &MONGO_DATABASE;
+    rocket::build()
+        .manage(model::Database::new())
+        .manage(schema::Schema::new(
+            schema::Query,
+            juniper::EmptyMutation::<model::Database>::new(),
+            juniper::EmptySubscription::<Database>::new(),
+        ))
+        .mount(
+            "/",
+            routes![graphiql, get_graphql_handler, post_graphql_handler],
+        )
 }
