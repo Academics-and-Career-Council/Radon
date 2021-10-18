@@ -2,12 +2,13 @@
 
 #[macro_use]
 extern crate juniper;
+#[macro_use]
+extern crate rocket;
 mod model;
 mod schema;
 
 use model::Database;
-use rocket::response::content;
-use rocket::State;
+use rocket::{State, http::Header, response::content};
 use serde::{Deserialize, Serialize};
 
 use dotenv::dotenv;
@@ -17,9 +18,9 @@ use mongodb::{
     sync::Client,
 };
 use std::env;
+use rocket::{Request, Response};
+use rocket::fairing::{Fairing, Info, Kind};
 
-#[macro_use]
-extern crate rocket;
 
 lazy_static! {
   static ref MONGO_DATABASE: mongodb::sync::Database = {
@@ -29,6 +30,26 @@ lazy_static! {
     let database = client.database("resources");
     database
   };
+}
+
+
+pub struct CORS;
+
+#[rocket::async_trait]
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response
+        }
+    }
+
+    async fn on_response<'r>(&self, _req: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET, OPTIONS"));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
 }
 
 #[get("/graphql")]
@@ -54,6 +75,11 @@ async fn post_graphql_handler(
     request.execute(&schema, &context).await
 }
 
+#[options("/graphql")]
+fn options_graphql_handler() {
+	
+}
+
 #[launch]
 fn rocket() -> _ {
     let _b = &MONGO_DATABASE;
@@ -64,8 +90,9 @@ fn rocket() -> _ {
             juniper::EmptyMutation::<model::Database>::new(),
             juniper::EmptySubscription::<Database>::new(),
         ))
+        .attach(CORS)
         .mount(
             "/",
-            routes![graphiql, get_graphql_handler, post_graphql_handler],
+            routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
         )
 }

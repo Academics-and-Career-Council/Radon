@@ -20,6 +20,7 @@ type SubResource {
 type Resource  {
   id: ID!
   wing: String!
+  order: Int!
   title: String!
   category: ResourceType!
   objects: [SubResource!]!
@@ -30,5 +31,5 @@ input WingResource {
 }
 
 type Query {
-  getResourcesByWing(params: WingResource!): [Resource!]!
+  getResourcesByWing(wing: String!): [Resource!]!
 }

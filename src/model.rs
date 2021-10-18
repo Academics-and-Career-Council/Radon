@@ -34,6 +34,7 @@ pub struct ResourcesFrame {
     #[serde(rename = "_id")]
     id: ObjectId,
     wing: String,
+    order: i32,
     title: String,
     category: Type,
     object_ids: Vec<String>,
@@ -43,6 +44,7 @@ pub struct ResourcesFrame {
 pub struct Resources {
     id: String,
     wing: String,
+    order: i32,
     title: String,
     category: Type,
     objects: Vec<Object>,
@@ -82,6 +84,7 @@ impl Database {
             let res: Resources = Resources {
                 id: item.id.clone().to_hex(),
                 wing: item.wing.clone(),
+                order: item.order.clone(),
                 title: item.title.clone(),
                 category: item.category.clone(),
                 objects: items_vec,

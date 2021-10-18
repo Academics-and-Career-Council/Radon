@@ -1,0 +1,15 @@
+{
+  "allowed_origins": "All",
+  "allowed_methods": [
+    "POST",
+    "OPTIONS",
+    "GET"
+  ],
+  "allowed_headers": "All",
+  "allow_credentials": false,
+  "expose_headers": [],
+  "max_age": null,
+  "send_wildcard": false,
+  "fairing_route_base": "/",
+  "fairing_route_rank": 0
+}
