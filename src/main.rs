@@ -1,4 +1,5 @@
 #![feature(proc_macro_hygiene, decl_macro)]
+#![feature(rustc_private)]
 
 #[macro_use]
 extern crate juniper;
@@ -83,16 +84,56 @@ fn options_graphql_handler() {
 #[launch]
 fn rocket() -> _ {
     let _b = &MONGO_DATABASE;
-    rocket::build()
+
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 2 {
+        println!("No args passed.");
+        println!("CORS disabled");
+        rocket::build()
         .manage(model::Database::new())
         .manage(schema::Schema::new(
             schema::Query,
             juniper::EmptyMutation::<model::Database>::new(),
             juniper::EmptySubscription::<Database>::new(),
         ))
-        .attach(CORS)
         .mount(
             "/",
             routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
         )
+    } else {
+        if args[1] == "--cors=true"{
+            println!("CORS enabled");
+            rocket::build()
+            .manage(model::Database::new())
+            .manage(schema::Schema::new(
+                schema::Query,
+                juniper::EmptyMutation::<model::Database>::new(),
+                juniper::EmptySubscription::<Database>::new(),
+            ))
+            .attach(CORS)
+            .mount(
+                "/",
+                routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
+            )
+        }else {
+            if args[1] == "--cors=false" {
+                println!("CORS disabled");
+            }else {
+                println!("Wrong arg, CORS disabled by default")
+            }
+            rocket::build()
+            .manage(model::Database::new())
+            .manage(schema::Schema::new(
+                schema::Query,
+                juniper::EmptyMutation::<model::Database>::new(),
+                juniper::EmptySubscription::<Database>::new(),
+            ))
+            .mount(
+                "/",
+                routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
+            )
+        }
+    }
+
 }
