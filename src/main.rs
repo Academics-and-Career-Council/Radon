@@ -28,7 +28,8 @@ lazy_static! {
     dotenv().expect(".env not found");
     let url:String = env::var("MONGO_URL").unwrap();
     let client:mongodb::sync::Client = Client::with_uri_str(url).unwrap();
-    let database = client.database("resources");
+	let db_name=env::var("DATABASE").unwrap();
+    let database = client.database(&db_name);
     database
   };
 }
