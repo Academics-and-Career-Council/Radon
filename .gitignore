@@ -16,3 +16,9 @@ Cargo.lock
 
 # env variables
 .env
+
+#test files
+src/main_test.rs
+src/schema_old.rs
+src/db.py
+radon
