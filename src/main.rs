@@ -11,8 +11,6 @@ mod schema;
 use model::Database;
 use rocket::{State, http::Header, response::content};
 use serde::{Deserialize, Serialize};
-
-use dotenv::dotenv;
 use lazy_static::lazy_static;
 use mongodb::{
     bson::{doc, oid::ObjectId, serde_helpers},
@@ -25,7 +23,6 @@ use rocket::fairing::{Fairing, Info, Kind};
 
 lazy_static! {
   static ref MONGO_DATABASE: mongodb::sync::Database = {
-    dotenv().expect(".env not found");
     let url:String = env::var("MONGO_URL").unwrap();
     let client:mongodb::sync::Client = Client::with_uri_str(url).unwrap();
 	let db_name=env::var("DATABASE").unwrap();

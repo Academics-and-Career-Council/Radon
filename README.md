@@ -12,3 +12,6 @@ $ cargo run -- --cors=true # for enabling CORS
 $ cargo run # to run withour CORS
 ```
 
+env Variables
+```MONGO_URL=mongodb+srv://anc:resources2021@cluster0.ypmnq.mongodb.net/development?retryWrites=true&w=majority
+DATABASE=production20```
