@@ -9,17 +9,16 @@ mod model;
 mod schema;
 
 use model::Database;
-use rocket::{State, http::Header, response::content};
+use rocket::{http::Header, response::content, State};
 use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
 use mongodb::{
     bson::{doc, oid::ObjectId, serde_helpers},
     sync::Client,
 };
-use std::env;
-use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
-
+use rocket::{Request, Response};
+use std::env;
 
 lazy_static! {
   static ref MONGO_DATABASE: mongodb::sync::Database = {
@@ -31,7 +30,6 @@ lazy_static! {
   };
 }
 
-
 pub struct CORS;
 
 #[rocket::async_trait]
@@ -39,13 +37,16 @@ impl Fairing for CORS {
     fn info(&self) -> Info {
         Info {
             name: "Add CORS headers to responses",
-            kind: Kind::Response
+            kind: Kind::Response,
         }
     }
 
     async fn on_response<'r>(&self, _req: &'r Request<'_>, response: &mut Response<'r>) {
         response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
-        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET, OPTIONS"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, GET, OPTIONS",
+        ));
         response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
@@ -75,9 +76,7 @@ async fn post_graphql_handler(
 }
 
 #[options("/graphql")]
-fn options_graphql_handler() {
-	
-}
+fn options_graphql_handler() {}
 
 #[launch]
 fn rocket() -> _ {
@@ -89,49 +88,63 @@ fn rocket() -> _ {
         println!("No args passed.");
         println!("CORS disabled");
         rocket::build()
-        .manage(model::Database::new())
-        .manage(schema::Schema::new(
-            schema::Query,
-            juniper::EmptyMutation::<model::Database>::new(),
-            juniper::EmptySubscription::<Database>::new(),
-        ))
-        .mount(
-            "/",
-            routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
-        )
-    } else {
-        if args[1] == "--cors=true"{
-            println!("CORS enabled");
-            rocket::build()
             .manage(model::Database::new())
             .manage(schema::Schema::new(
                 schema::Query,
                 juniper::EmptyMutation::<model::Database>::new(),
                 juniper::EmptySubscription::<Database>::new(),
             ))
-            .attach(CORS)
             .mount(
                 "/",
-                routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
+                routes![
+                    graphiql,
+                    get_graphql_handler,
+                    post_graphql_handler,
+                    options_graphql_handler
+                ],
             )
-        }else {
+    } else {
+        if args[1] == "--cors=true" {
+            println!("CORS enabled");
+            rocket::build()
+                .manage(model::Database::new())
+                .manage(schema::Schema::new(
+                    schema::Query,
+                    juniper::EmptyMutation::<model::Database>::new(),
+                    juniper::EmptySubscription::<Database>::new(),
+                ))
+                .attach(CORS)
+                .mount(
+                    "/",
+                    routes![
+                        graphiql,
+                        get_graphql_handler,
+                        post_graphql_handler,
+                        options_graphql_handler
+                    ],
+                )
+        } else {
             if args[1] == "--cors=false" {
                 println!("CORS disabled");
-            }else {
+            } else {
                 println!("Wrong arg, CORS disabled by default")
             }
             rocket::build()
-            .manage(model::Database::new())
-            .manage(schema::Schema::new(
-                schema::Query,
-                juniper::EmptyMutation::<model::Database>::new(),
-                juniper::EmptySubscription::<Database>::new(),
-            ))
-            .mount(
-                "/",
-                routes![graphiql, get_graphql_handler, post_graphql_handler, options_graphql_handler],
-            )
+                .manage(model::Database::new())
+                .manage(schema::Schema::new(
+                    schema::Query,
+                    juniper::EmptyMutation::<model::Database>::new(),
+                    juniper::EmptySubscription::<Database>::new(),
+                ))
+                .mount(
+                    "/",
+                    routes![
+                        graphiql,
+                        get_graphql_handler,
+                        post_graphql_handler,
+                        options_graphql_handler
+                    ],
+                )
         }
     }
-
 }
