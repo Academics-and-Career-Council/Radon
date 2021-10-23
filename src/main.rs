@@ -8,26 +8,26 @@ extern crate rocket;
 mod model;
 mod schema;
 
-use model::Database;
-use rocket::{http::Header, response::content, State};
-use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
+use model::Database;
 use mongodb::{
     bson::{doc, oid::ObjectId, serde_helpers},
     sync::Client,
 };
 use rocket::fairing::{Fairing, Info, Kind};
+use rocket::{http::Header, response::content, State};
 use rocket::{Request, Response};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 lazy_static! {
-  static ref MONGO_DATABASE: mongodb::sync::Database = {
-    let url:String = env::var("MONGO_URL").unwrap();
-    let client:mongodb::sync::Client = Client::with_uri_str(url).unwrap();
-	let db_name=env::var("DATABASE").unwrap();
-    let database = client.database(&db_name);
-    database
-  };
+    static ref MONGO_DATABASE: mongodb::sync::Database = {
+        let url: String = env::var("MONGO_URL").unwrap();
+        let client: mongodb::sync::Client = Client::with_uri_str(url).unwrap();
+        let db_name = env::var("DATABASE").unwrap();
+        let database = client.database(&db_name);
+        database
+    };
 }
 
 pub struct CORS;
