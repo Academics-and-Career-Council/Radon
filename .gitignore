@@ -12,7 +12,7 @@ Cargo.lock
 
 # Added by cargo
 
-/target
+./target
 
 # env variables
 .env
@@ -22,3 +22,4 @@ src/main_test.rs
 src/schema_old.rs
 src/db.py
 radon
+Rocket.toml
