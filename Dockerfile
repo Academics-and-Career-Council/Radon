@@ -10,3 +10,4 @@ COPY --from=build \
     /usr/local/bin/
 EXPOSE 8000
 ENTRYPOINT [ "/usr/local/bin/radon" ]
+
