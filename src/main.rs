@@ -22,13 +22,13 @@ use rocket::{Request, Response};
 use std::env;
 
 lazy_static! {
-  static ref MONGO_DATABASE: mongodb::sync::Database = {
-    let url:String = env::var("MONGO_URL").unwrap();
-    let client:mongodb::sync::Client = Client::with_uri_str(url).unwrap();
-	let db_name=env::var("DATABASE").unwrap();
-    let database = client.database(&db_name);
-    database
-  };
+    static ref MONGO_DATABASE: mongodb::sync::Database = {
+        let url: String = env::var("MONGO_URL").unwrap();
+        let client: mongodb::sync::Client = Client::with_uri_str(url).unwrap();
+        let db_name = env::var("DATABASE").unwrap();
+        let database = client.database(&db_name);
+        database
+    };
 }
 
 pub struct CORS;
