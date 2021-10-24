@@ -19,7 +19,9 @@ COPY ./src ./src
 # RUN cargo install --target x86_64-unknown-linux-musl --path .
 RUN rustup target add x86_64-unknown-linux-musl
 
-FROM scratch
+FROM blockloop/nginx-scratch:latest
+COPY nginx.conf /usr/local/nginx/conf/
 COPY --from=build /usr/radon/target/release/radon .
-USER 1000
-CMD ["./radon"]
+COPY docker-entrypoint.sh .
+RUN ["chmod", "+x", "docker-entrypoint.sh"]
+ENTRYPOINT ["docker-entrypoint.sh"]
