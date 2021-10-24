@@ -1,2 +1,2 @@
 /usr/local/nginx/sbin/nginx 
-./radon 
+/usr/local/bin/radon
