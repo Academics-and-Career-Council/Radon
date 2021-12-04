@@ -1,5 +1,8 @@
-use crate::{doc, serde_helpers, Deserialize, ObjectId, Serialize, MONGO_DATABASE};
-use std::collections::HashMap;
+use crate::{doc, serde_helpers, Deserialize, FindOptions, ObjectId, Serialize, MONGO_DATABASE};
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter, Result},
+};
 
 #[allow(non_camel_case_types)]
 #[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
@@ -8,6 +11,17 @@ pub enum Category {
     gdrive,
     youtube,
     zoom,
+}
+
+impl Display for Category {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            Category::pdf => write!(f, "pdf"),
+            Category::gdrive => write!(f, "gdrive"),
+            Category::youtube => write!(f, "youtube"),
+            Category::zoom => write!(f, "zoom")
+        }
+    }
 }
 
 #[allow(non_camel_case_types)]
@@ -23,10 +37,18 @@ pub struct Object {
         serialize_with = "serde_helpers::serialize_hex_string_as_object_id",
         deserialize_with = "serde_helpers::deserialize_hex_string_from_object_id"
     )]
-    id: String,
-    name: String,
-    category: Category,
-    link: String,
+    pub id: String,
+    pub name: String,
+    pub category: Category,
+    pub link: String,
+}
+
+#[derive(GraphQLInputObject, Debug, Clone, Serialize, Deserialize)]
+pub struct NewObject {
+    pub heading: String,
+    pub name: String,
+    pub category: Category,
+    pub link: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,6 +72,11 @@ pub struct Resources {
     objects: Vec<Object>,
 }
 
+#[derive(GraphQLObject, Debug, Clone, Serialize, Deserialize)]
+pub struct Wings {
+    name: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
     pub resources: HashMap<String, Vec<Resources>>,
@@ -63,9 +90,9 @@ impl Database {
 
         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
         let objects_cursor = objects_db.find(None, None).unwrap();
-
+        let find_options = FindOptions::builder().sort(doc! {"id": -1}).build();
         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
-        let resources_cursor = resources_db.find(None, None).unwrap();
+        let resources_cursor = resources_db.find(None, find_options).unwrap();
 
         for obj in objects_cursor {
             // makes map of object_ids : objects
@@ -100,7 +127,7 @@ impl Database {
                 resources.insert(key, val);
             }
         }
-
+        // println!("{:#?}", resources);
         return Database {
             resources: resources,
         };
@@ -109,4 +136,26 @@ impl Database {
     pub fn get_resources(&self, wing: String) -> Vec<Resources> {
         return self.resources.get(&wing).unwrap().clone();
     }
+
+    pub fn get_wings(&self) -> Vec<Wings> {
+        let mut wings: Vec<Wings> = Vec::new();
+        for (key, _val) in self.resources.iter() {
+            let key = Wings { name: key.clone() };
+            wings.push(key)
+        }
+        return wings;
+    }
 }
+
+// impl Database{
+//     fn delete_resources(ids:Vec<String>) {
+//         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
+//         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
+//         for id in ids {
+//             objects_db.delete_one(doc!{"id" :id.clone()}, None).expect(&format!("delete failed for {}", id.clone()));
+
+//         }
+//         // objects_db.delete_one(query, options)
+
+//     }
+// }

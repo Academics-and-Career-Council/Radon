@@ -32,4 +32,5 @@ input WingResource {
 
 type Query {
   getResourcesByWing(wing: String!): [Resource!]!
+  getWings:[String!]!
 }
