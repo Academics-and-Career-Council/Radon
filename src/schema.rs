@@ -1,6 +1,6 @@
 use crate::{
     doc,
-    model::{Category, Database, Object, Resources, ResourcesFrame, Wings, NewObject},
+    model::{Category, Database, NewObject, Object, Resources, ResourcesFrame, Wings},
     Document, ObjectId, MONGO_DATABASE,
 };
 use juniper::FieldResult;
@@ -58,19 +58,13 @@ pub struct Mutation;
 	Context = Database,
 )]
 impl Mutation {
-    fn add_object(
-        heading: String,
-        name: String,
-        category: Category,
-        link: String,
-    ) -> FieldResult<Object> {
-        let object =
-            doc! {"name":name.clone(), "category":category.to_string(), "link":link.clone()};
+    fn add_object(new_object: NewObject, heading: String) -> FieldResult<Object> {
+        let object = doc! {"name":new_object.name.clone(), "category":new_object.category.to_string(), "link":new_object.link.clone()};
         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
         let objects_db = MONGO_DATABASE.collection::<Document>("objects");
         let inserted_object = objects_db
             .insert_one(object, None)
-            .expect(&format!("write failed for {}", name));
+            .expect(&format!("write failed for {}", new_object.name));
         let inserted_id = inserted_object.inserted_id.to_string();
         let _updated_resource = resources_db
             .update_one(
@@ -81,9 +75,9 @@ impl Mutation {
             .expect(&format!("adding to array failed for {}", heading));
         Ok(Object {
             id: inserted_id,
-            name: name,
-            category: category,
-            link: link,
+            name: new_object.name,
+            category: new_object.category,
+            link: new_object.link,
         })
     }
 }

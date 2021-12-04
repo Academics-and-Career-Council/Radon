@@ -19,7 +19,7 @@ impl Display for Category {
             Category::pdf => write!(f, "pdf"),
             Category::gdrive => write!(f, "gdrive"),
             Category::youtube => write!(f, "youtube"),
-            Category::zoom => write!(f, "zoom")
+            Category::zoom => write!(f, "zoom"),
         }
     }
 }
@@ -30,6 +30,7 @@ pub enum Type {
     document,
     video,
 }
+
 #[derive(GraphQLObject, Debug, Clone, Serialize, Deserialize)]
 pub struct Object {
     #[serde(
@@ -45,7 +46,6 @@ pub struct Object {
 
 #[derive(GraphQLInputObject, Debug, Clone, Serialize, Deserialize)]
 pub struct NewObject {
-    pub heading: String,
     pub name: String,
     pub category: Category,
     pub link: String,
