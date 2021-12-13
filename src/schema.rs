@@ -1,6 +1,6 @@
 use crate::{
     doc,
-    model::{Category, Database, NewObject, Object, Resources, ResourcesFrame, Wings},
+    model::{Category, Database, NewObject, Object, Resources, Wings},
     Document, ObjectId, MONGO_DATABASE,
 };
 use juniper::FieldResult;
