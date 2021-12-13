@@ -134,7 +134,15 @@ impl Database {
     }
 
     pub fn get_resources(&self, wing: String) -> Vec<Resources> {
-        return self.resources.get(&wing).unwrap().clone();
+        // to be handles.. invalid wing ka request aa jaa rha hai
+        println!("{:#?}", self.resources);
+        println!("{:#?}", wing);
+        if wing=="invald".to_string() {
+            let result:Vec<Resources> = Vec::new();
+            return result;
+        } else {
+            return self.resources.get(&wing).unwrap().clone();
+        }
     }
 
     pub fn get_wings(&self) -> Vec<Wings> {
