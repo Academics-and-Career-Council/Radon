@@ -59,7 +59,7 @@ pub struct ResourcesFrame {
     order: i32,
     title: String,
     category: Type,
-    object_ids: Vec<String>,
+    pub object_ids: Vec<String>,
 }
 
 #[derive(GraphQLObject, Debug, Clone, Serialize, Deserialize)]
@@ -135,10 +135,10 @@ impl Database {
 
     pub fn get_resources(&self, wing: String) -> Vec<Resources> {
         // to be handles.. invalid wing ka request aa jaa rha hai
-        println!("{:#?}", self.resources);
-        println!("{:#?}", wing);
-        if wing=="invald".to_string() {
-            let result:Vec<Resources> = Vec::new();
+        // println!("{:#?}", self.resources);
+        // println!("{:#?}", wing);
+        if wing == "invald".to_string() {
+            let result: Vec<Resources> = Vec::new();
             return result;
         } else {
             return self.resources.get(&wing).unwrap().clone();
