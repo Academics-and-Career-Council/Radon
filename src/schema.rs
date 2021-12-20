@@ -79,11 +79,6 @@ impl Mutation {
                 link: new_object.link,
             })
         } else {
-            // wing: String,
-            // order: i32,
-            // title: String,
-            // category: Type,
-            // object_ids: Vec<String>,
             let resource_frame = doc! {"wing": wing, "order": order.parse::<i32>().unwrap() , "title":heading.clone(), "category" : "document", "object_ids": vec![inserted_id] };
             resources_db
                 .insert_one(resource_frame, None)
@@ -116,12 +111,8 @@ impl Mutation {
     }
 
     fn delete_objects(heading_id: String, object_id: String) -> FieldResult<bool> {
-        // println!("{:#?}", data);
         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
-        // for heading_id in data.headings {
-        //     resources_db.update_one(doc! {"_id": ObjectId::parse_str(heading_id.id.clone()).unwrap()}, doc!{ "$pullAll": { "object_ids": heading_id } }, options)
-        // }
         let found_resource = resources_db
             .find_one(
                 doc! {"_id": ObjectId::parse_str(heading_id.clone()).unwrap()},
