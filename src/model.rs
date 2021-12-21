@@ -59,7 +59,7 @@ pub struct ResourcesFrame {
     order: i32,
     title: String,
     category: Type,
-    object_ids: Vec<String>,
+    pub object_ids: Vec<String>,
 }
 
 #[derive(GraphQLObject, Debug, Clone, Serialize, Deserialize)]
@@ -127,14 +127,17 @@ impl Database {
                 resources.insert(key, val);
             }
         }
-        // println!("{:#?}", resources);
         return Database {
             resources: resources,
         };
     }
 
     pub fn get_resources(&self, wing: String) -> Vec<Resources> {
-        return self.resources.get(&wing).unwrap().clone();
+        let result: Vec<Resources> = Vec::new();
+        match self.resources.get(&wing) {
+            Some(data) => return data.clone(),
+            None => return result,
+        }
     }
 
     pub fn get_wings(&self) -> Vec<Wings> {
@@ -146,16 +149,3 @@ impl Database {
         return wings;
     }
 }
-
-// impl Database{
-//     fn delete_resources(ids:Vec<String>) {
-//         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
-//         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
-//         for id in ids {
-//             objects_db.delete_one(doc!{"id" :id.clone()}, None).expect(&format!("delete failed for {}", id.clone()));
-
-//         }
-//         // objects_db.delete_one(query, options)
-
-//     }
-// }
