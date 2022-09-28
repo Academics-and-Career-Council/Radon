@@ -5,8 +5,8 @@ use crate::{
 };
 use chrono::{offset::Local, DateTime};
 use juniper::FieldResult;
-use mongodb::error::Error;
 use mongodb::results::DeleteResult;
+use mongodb::{error::Error, results::InsertOneResult};
 use std::time::SystemTime;
 
 struct Log {
@@ -63,9 +63,14 @@ impl Query {
     }
 
     fn get_document(id: String) -> FieldResult<Object> {
+        // for logging
+        let system_time = SystemTime::now();
+        let datetime: DateTime<Local> = system_time.into();
+        let timestamp: String = datetime.format("D%d/%m/%YT%T").to_string();
+
         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
         let fetched_document =
-            objects_db.find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, None);
+            objects_db.find_one(doc! {"_id": ObjectId::parse_str(id.clone()).unwrap()}, None);
         let err_doc = Object {
             id: "NA".to_string(),
             name: "NA".to_string(),
@@ -74,10 +79,52 @@ impl Query {
         };
         let document = match fetched_document {
             Ok(fetched_document) => match fetched_document {
-                None => err_doc,
-                Some(document) => document,
+                None => {
+                    Log::new(
+                        500,
+                        "info".to_string(),
+                        format!("Request for Object id {id} failed"),
+                        format!(
+                            "Request for Object id {id} failed. Requested by {{user_id/email}} at {}",
+                            datetime.format("%d/%m/%y %T").to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "failed".to_string(),
+                        timestamp.clone(),
+                    );
+                    err_doc
+                }
+                Some(document) => {
+                    Log::new(
+                        200,
+                        "info".to_string(),
+                        format!("Request for Object id {id} success"),
+                        format!(
+                            "Request for Object id {id} succeded. Requested by {{user_id/email}} at {}",
+                            datetime.format("%d/%m/%y %T").to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "success".to_string(),
+                        timestamp.clone(),
+                    );
+                    document
+                },
             },
-            Err(_err) => err_doc,
+            Err(_err) => {
+                Log::new(
+                    500,
+                    "info".to_string(),
+                    format!("Request for Object id {id} failed"),
+                    format!(
+                        "Request for Object id {id} failed. Requested by {{user_id/email}} at {}",
+                        datetime.format("%d/%m/%y %T").to_string()
+                    ),
+                    format!("{{user_id/email}}"),
+                    "failed".to_string(),
+                    timestamp.clone(),
+                );
+                err_doc
+            },
         };
         return Ok(document);
     }
@@ -96,22 +143,110 @@ impl Mutation {
         order: String,
         wing: String,
     ) -> FieldResult<Object> {
+        // for logging
+        let system_time = SystemTime::now();
+        let datetime: DateTime<Local> = system_time.into();
+        let timestamp: String = datetime.format("D%d/%m/%YT%T").to_string();
+
         let object = doc! {"name":new_object.name.clone(), "category":new_object.category.to_string(), "link":new_object.link.clone()};
         let resources_db = MONGO_DATABASE.collection::<Document>("resources");
         let objects_db = MONGO_DATABASE.collection::<Document>("objects");
-        let inserted_object = objects_db
-            .insert_one(object, None)
-            .expect(&format!("write failed for {}", new_object.name));
+        let inserted_object_result = objects_db.insert_one(object, None);
+
+        let inserted_object = match inserted_object_result {
+            Ok(data) => {
+                // creating a logging struct
+                // inserted_object = data;
+                Log::new(
+                    200,
+                    "warning".to_string(),
+                    format!(
+                        "Resource block named {}, updated by {{user_id/email}}",
+                        heading.clone()
+                    ),
+                    format!(
+                        "Resource block named {} updated by {{user_id/email}} at {}",
+                        heading.clone(),
+                        datetime.format("%d/%m/%y %T").to_string()
+                    ),
+                    format!("{{user_id/email}}"),
+                    "success".to_string(),
+                    timestamp.clone(),
+                );
+                data
+            }
+            Err(e) => {
+                // creating a logging struct
+                Log::new(
+                        500,
+                        "warning".to_string(),
+                        format!("Updation of Resource Block named {} failed", heading.clone()),
+                        format!(
+                            "Updation of Resource Block named {} by {{user_id/email}} failed at {}. Reson: {}",
+                            heading.clone(),
+                            datetime.format("%d/%m/%y %T").to_string(),
+                            e.to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "failure".to_string(),
+                        timestamp.clone(),
+                    );
+                return Ok(Object {
+                    id: "NA".to_string(),
+                    name: "NA".to_string(),
+                    category: Category::gdrive,
+                    link: "NA".to_string(),
+                });
+            }
+        };
+        // .expect(&format!("write failed for {}", new_object.name));
         let mut inserted_id = inserted_object.inserted_id.to_string();
         inserted_id = inserted_id.split("\"").collect::<Vec<&str>>()[1].to_string();
         if exists {
-            let _updated_resource = resources_db
-                .update_one(
-                    doc! {"title":heading.clone()},
-                    doc! {"$addToSet":{"object_ids":inserted_id.clone()}},
-                    None,
-                )
-                .expect(&format!("adding to array failed for {}", heading));
+            let updated_resource = resources_db.update_one(
+                doc! {"title":heading.clone()},
+                doc! {"$addToSet":{"object_ids":inserted_id.clone()}},
+                None,
+            );
+            match updated_resource {
+                Ok(_) => {
+                    // creating a logging struct
+                    Log::new(
+                        200,
+                        "warning".to_string(),
+                        format!(
+                            "Resource block named {}, updated by {{user_id/email}}",
+                            heading.clone()
+                        ),
+                        format!(
+                            "Resource block named {} updated by {{user_id/email}} at {}",
+                            heading.clone(),
+                            datetime.format("%d/%m/%y %T").to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "success".to_string(),
+                        timestamp.clone(),
+                    );
+                }
+                Err(err) => {
+                    // creating a logging struct
+                    Log::new(
+                        500,
+                        "warning".to_string(),
+                        format!("Updation of Resource Block named {} failed", heading.clone()),
+                        format!(
+                            "Updation of Resource Block named {} by {{user_id/email}} failed at {}. Reson: {}",
+                            heading.clone(),
+                            datetime.format("%d/%m/%y %T").to_string(),
+                            err.to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "failure".to_string(),
+                        timestamp.clone(),
+                    );
+                }
+            }
+            // .expect(&format!("adding to array failed for {}", heading));
             return Ok(Object {
                 id: inserted_id,
                 name: new_object.name,
@@ -120,9 +255,46 @@ impl Mutation {
             });
         } else {
             let resource_frame = doc! {"wing": wing, "order": order.parse::<i32>().unwrap() , "title":heading.clone(), "category" : "document", "object_ids": vec![inserted_id] };
-            resources_db
-                .insert_one(resource_frame, None)
-                .expect(&format!("adding {} failed", heading));
+            let update_result = resources_db.insert_one(resource_frame, None);
+            // .expect(&format!("adding {} failed", heading));
+            match update_result {
+                Ok(_) => {
+                    // creating a logging struct
+                    Log::new(
+                        200,
+                        "warning".to_string(),
+                        format!(
+                            "Resource block named {}, created by {{user_id/email}}",
+                            heading.clone()
+                        ),
+                        format!(
+                            "Resource block named {} created by {{user_id/email}} at {}",
+                            heading.clone(),
+                            datetime.format("%d/%m/%y %T").to_string()
+                        ),
+                        format!("{{user_id/email}}"),
+                        "success".to_string(),
+                        timestamp.clone(),
+                    );
+                }
+                Err(err) => {
+                    // creating a logging struct
+                    Log::new(
+                            500,
+                            "warning".to_string(),
+                            format!("Creation of Resource Block named {} failed", heading.clone()),
+                            format!(
+                                "Creation of Resource Block named {} by {{user_id/email}} failed at {}. Reson: {}",
+                                heading.clone(),
+                                datetime.format("%d/%m/%y %T").to_string(),
+                                err.to_string()
+                            ),
+                            format!("{{user_id/email}}"),
+                            "failure".to_string(),
+                            timestamp.clone(),
+                        );
+                }
+            }
             return Ok(Object {
                 id: "inserted_id".to_string(),
                 name: new_object.name,
@@ -133,15 +305,54 @@ impl Mutation {
     }
 
     fn edit_object(data: NewObject, id: String) -> FieldResult<Object> {
+        // for logging
+        let system_time = SystemTime::now();
+        let datetime: DateTime<Local> = system_time.into();
+        let timestamp: String = datetime.format("D%d/%m/%YT%T").to_string();
+
         let updated_doc = doc! {"$set" :{"name": data.name.clone(), "category": data.category.to_string(), "link" :data.link.clone() }};
         let objects_db = MONGO_DATABASE.collection::<Document>("objects");
-        objects_db
-            .update_one(
-                doc! {"_id": ObjectId::parse_str(id.clone()).unwrap()},
-                updated_doc,
-                None,
-            )
-            .expect(&format!("edit failed for id {}", id));
+        let update_result = objects_db.update_one(
+            doc! {"_id": ObjectId::parse_str(id.clone()).unwrap()},
+            updated_doc,
+            None,
+        );
+        // .expect(&format!("edit failed for id {}", id));
+        match update_result {
+            Ok(_) => {
+                // creating a logging struct
+                Log::new(
+                    200,
+                    "warning".to_string(),
+                    format!("Object id {}, deleted by {{user_id/email}}", id),
+                    format!(
+                        "Object id {} deleted by {{user_id/email}} at {}",
+                        id,
+                        datetime.format("%d/%m/%y %T").to_string()
+                    ),
+                    format!("{{user_id/email}}"),
+                    "success".to_string(),
+                    timestamp.clone(),
+                );
+            }
+            Err(err) => {
+                // creating a logging struct
+                Log::new(
+                    500,
+                    "warning".to_string(),
+                    format!("Deletion of Object id {} failed", id),
+                    format!(
+                        "Deletion of Object id {} by {{user_id/email}} failed at {}. Reson: {}",
+                        id,
+                        datetime.format("%d/%m/%y %T").to_string(),
+                        err.to_string()
+                    ),
+                    format!("{{user_id/email}}"),
+                    "failure".to_string(),
+                    timestamp.clone(),
+                );
+            }
+        }
         return Ok(Object {
             id,
             name: data.name,
@@ -196,7 +407,8 @@ impl Mutation {
                         format!(
                         "Deletion of resource block id {{resource_id}} by {{user_id/email}} failed at {}. Reson: {}",
                         datetime.format("%d/%m/%y %T").to_string(), err.to_string()),
-                        format!("{{user_id/email}}"), "failure".to_string(),
+                        format!("{{user_id/email}}"), 
+                        "failure".to_string(),
                         timestamp.clone());
                 }
             }

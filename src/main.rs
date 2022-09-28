@@ -15,8 +15,9 @@ use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
 use mongodb::{
     bson::{doc, oid::ObjectId, serde_helpers, Document},
-    sync::Client, options::FindOptions
+    sync::{Client, Cursor}, options::FindOptions
 };
+
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::{Request, Response};
 use std::env;

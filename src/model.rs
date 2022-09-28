@@ -1,7 +1,10 @@
-use crate::{doc, serde_helpers, Deserialize, FindOptions, ObjectId, Serialize, MONGO_DATABASE};
+use crate::{
+    doc, serde_helpers, Cursor, Deserialize, FindOptions, ObjectId, Serialize, MONGO_DATABASE,
+};
 use std::{
     collections::HashMap,
     fmt::{Display, Formatter, Result},
+    process::abort,
 };
 
 #[allow(non_camel_case_types)]
@@ -82,6 +85,7 @@ pub struct Database {
     pub resources: HashMap<String, Vec<Resources>>,
 }
 
+// Logging remains for this part poochna hai
 impl Database {
     pub fn new() -> Database {
         let mut objects: HashMap<String, Object> = HashMap::new();
@@ -89,7 +93,13 @@ impl Database {
         let mut resources: HashMap<String, Vec<Resources>> = HashMap::new();
 
         let objects_db = MONGO_DATABASE.collection::<Object>("objects");
-        let objects_cursor = objects_db.find(None, None).unwrap();
+        let objects_cursor_result = objects_db.find(None, None);
+        // let empty_cursor:Cursor<Object> = Cursor::
+        let objects_cursor = match objects_cursor_result {
+            Ok(data) => data,
+            Err(e) => abort(),
+        };
+
         let find_options = FindOptions::builder().sort(doc! {"id": -1}).build();
         let resources_db = MONGO_DATABASE.collection::<ResourcesFrame>("resources");
         let resources_cursor = resources_db.find(None, find_options).unwrap();
